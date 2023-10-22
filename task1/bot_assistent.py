@@ -3,6 +3,7 @@ import os
 from constants import COMMANDS, CONTACTS_FILE
 from pathlib import Path
 
+
 def main():
     print("Welcome to the assitant bot!")
     while True:
@@ -13,61 +14,77 @@ def main():
             elif command.startswith("add"):
                 try:
                     _, name, phone = command.split(' ')
-                    add_contact(name, phone)
-                    print("Contact added")
+                    msg = add_contact(name, phone)
+                    print(msg)
                 except ValueError:
-                    print(f"Expecting command in form {COMMANDS.get('add')}")
-                except DuplicateEntry:
-                    print(f"We alreay have a contact with name {name}")
+                    raise InvalidCommandException(COMMANDS.get('add'))
             elif command.startswith("change"):
                 try:
                     _, name, phone = command.split(' ')
-                    update_contact(name, phone)
-                    print("Contact updated")
+                    msg = update_contact(name, phone)
+                    print(msg)
                 except ValueError:
-                    print(f"Expecting command in form {COMMANDS.get('update')}")
-                except ValueNotFound:
-                    print(f"No contact for name {name} found")
+                    raise InvalidCommandException(COMMANDS.get('update'))
             elif command.startswith("phone"):
                 try:
                     _, name = command.split(' ')
                     phone = get_phone(name)
                     print(phone)
                 except ValueError:
-                    print(f"Expecting command in form {COMMANDS.get('phone')}")
-                except ValueNotFound:
-                    print(f"No contact for name {name} found")
+                    raise InvalidCommandException(COMMANDS.get('phone'))
             elif command.startswith("all"):
-                try:
-                    contacts = get_contacts()
-                    for contact in contacts:
-                        print(f"{contact.get('name'):<10}{contact.get('phone'):<10}")
-                except FileNotFoundError:
-                    # if the file is empty there are no contacts to show
-                    print("We haven't stored any contacts yet")
+                msg = show_all_contacts()
+                print(msg)
             elif command in ["close", "exit"]:
                 print("Goodbye!")
                 break
             else:
                 raise InvalidCommandException
-        except InvalidCommandException:
-            print(("Ivalid command recieved. Accepted commands are:\n{}"
+        except InvalidCommandException as e:
+            print(f"Expecting command in form {e.command}" if e.command else
+                  ("Ivalid command recieved. Accepted commands are:\n{}"
                    .format('\n'.join(['- ' + s for s in COMMANDS.values()]))))
             continue
 
 # exception when invalid commdand was entered by the user
 class InvalidCommandException(Exception):
-    pass
+    def __init__(self, command: str = '', *args: object) -> None:
+        super().__init__(*args)
+        self.command = command
 
 # exception raised when value wasn't found
 class ValueNotFound(Exception):
-    pass
+    def __init__(self, name: str, *args: object) -> None:
+        super().__init__(*args)
+        self.name = name
+
 
 class DuplicateEntry(Exception):
-    pass
+    def __init__(self, name: str, *args: object) -> None:
+        super().__init__(*args)
+        self.name = name
+
 
 file_path = Path.cwd().joinpath(CONTACTS_FILE)
 
+
+def input_error(func):
+    def inner(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except ValueError:
+            return "Give me name and phone please."
+        except DuplicateEntry as error:
+            return f"We alreay have a contact with name {error.name}"
+        except ValueNotFound as error:
+            return f"No contact for name {error.name} found"
+        except FileNotFoundError:
+            # if the file is empty there are no contacts to show
+            return "We haven't stored any contacts yet"
+    return inner
+
+
+@input_error
 def add_contact(name: str, phone: str):
     try:
         contacts = get_contacts()
@@ -79,13 +96,17 @@ def add_contact(name: str, phone: str):
         # if we already have a name in our contact list, we don't add it again
         n = c.get("name")
         if n == name:
-            raise DuplicateEntry
-    
+            raise DuplicateEntry(name)
+
     contact = {"name": name, "phone": phone}
     contacts.append(contact)
     with open(file_path, 'w') as json_file:
         json.dump(contacts, json_file, indent=4)
 
+    return "Contact added"
+
+
+@input_error
 def update_contact(name, phone):
     try:
         contacts = get_contacts()
@@ -97,11 +118,15 @@ def update_contact(name, phone):
         with open(file_path, 'w') as json_file:
             json.dump(contacts, json_file, indent=4)
         if not updated:
-            raise ValueNotFound
+            raise ValueNotFound(name)
     except FileNotFoundError:
         # if the file is empty, our name isn't in the file
-        raise ValueNotFound
+        raise ValueNotFound(name)
 
+    return "Contact updated"
+
+
+@input_error
 def get_phone(name):
     try:
         contacts = get_contacts()
@@ -109,19 +134,28 @@ def get_phone(name):
             if c.get("name") == name:
                 return c["phone"]
         # if there was no match, then there is no such contact stored
-        raise ValueNotFound
+        raise ValueNotFound(name)
     except FileNotFoundError:
         # if the file is empty, our name isn't in the file
-        raise ValueNotFound
+        raise ValueNotFound(name)
+
+
+@input_error
+def show_all_contacts():
+    contacts = get_contacts()
+    return '\n'.join(map(lambda contact: f"{contact.get('name'):<10}{contact.get('phone'):<10}", contacts))
+
 
 def get_contacts():
-    file_not_empty = os.path.isfile(file_path) and os.path.getsize(file_path) > 0
+    file_not_empty = os.path.isfile(
+        file_path) and os.path.getsize(file_path) > 0
     if file_not_empty:
         with open(file_path, 'r') as json_file:
             data_list = json.load(json_file)
             return data_list
     else:
         raise FileNotFoundError
+
 
 if __name__ == "__main__":
     main()
