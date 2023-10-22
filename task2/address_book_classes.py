@@ -20,8 +20,9 @@ class Phone(Field):
         self.phone = phone
         super().__init__(value=phone)
 
+    @classmethod
     def validate(self, phone_number) -> bool:
-        pass
+        return len(phone_number) == 10
 
 
 class Record:
@@ -30,7 +31,10 @@ class Record:
         self.phones = []
 
     def add_phone(self, phone: str):
-        pass
+        if Phone.validate(phone):
+            self.phones.append(Phone(phone))
+        else:
+            print("Invalid phone number!")
 
     def delete_phone(self, phone: str):
         pass
