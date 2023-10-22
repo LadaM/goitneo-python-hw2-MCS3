@@ -30,20 +30,29 @@ class Record:
         self.name = Name(name)
         self.phones = []
 
-    def add_phone(self, phone: str):
-        if Phone.validate(phone):
-            self.phones.append(Phone(phone))
-        else:
-            print("Invalid phone number!")
+    def with_phone_validation(func):
+        def inner(self, phone: str):
+            if Phone.validate(phone_number=phone):
+                return func(self, phone)
+            else:
+                print("Invalid phone number!")
+        return inner
 
+    @with_phone_validation
+    def add_phone(self, phone: str):
+        self.phones.append(Phone(phone))
+
+    @with_phone_validation
     def delete_phone(self, phone: str):
-        pass
+        self.phones.remove(Phone(phone))
 
     def edit_phone(self, old_phone: str, new_phone: str):
         pass
 
-    def find_phone(self, phone: Phone):
-        pass
+    @with_phone_validation
+    def find_phone(self, phone: str):
+        index = self.phones.index(Phone(phone))
+        return self.phones[index]
 
 
 class AddressBook(UserDict):
@@ -76,6 +85,7 @@ if __name__ == "__main__":
     # Створення та додавання нового запису для Jane
     jane_record = Record("Jane")
     jane_record.add_phone("9876543210")
+    jane_record.delete_phone("98235")
     book.add_record(jane_record)
 
     # Виведення всіх записів у книзі
