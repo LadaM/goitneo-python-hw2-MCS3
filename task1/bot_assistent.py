@@ -17,21 +17,21 @@ def main():
                     msg = add_contact(name, phone)
                     print(msg)
                 except ValueError:
-                    raise InvalidCommandException(COMMANDS.get('add'))
+                    raise InvalidCommand(COMMANDS.get('add'))
             elif command.startswith("change"):
                 try:
                     _, name, phone = command.split(' ')
                     msg = update_contact(name, phone)
                     print(msg)
                 except ValueError:
-                    raise InvalidCommandException(COMMANDS.get('update'))
+                    raise InvalidCommand(COMMANDS.get('update'))
             elif command.startswith("phone"):
                 try:
                     _, name = command.split(' ')
                     phone = get_phone(name)
                     print(phone)
                 except ValueError:
-                    raise InvalidCommandException(COMMANDS.get('phone'))
+                    raise InvalidCommand(COMMANDS.get('phone'))
             elif command.startswith("all"):
                 msg = show_all_contacts()
                 print(msg)
@@ -39,27 +39,28 @@ def main():
                 print("Goodbye!")
                 break
             else:
-                raise InvalidCommandException
-        except InvalidCommandException as e:
+                raise InvalidCommand
+        except InvalidCommand as e:
             print(f"Expecting command in form {e.command}" if e.command else
                   ("Ivalid command recieved. Accepted commands are:\n{}"
                    .format('\n'.join(['- ' + s for s in COMMANDS.values()]))))
             continue
 
-# exception when invalid commdand was entered by the user
-class InvalidCommandException(Exception):
+class InvalidCommand(Exception):
+    '''raised when invalid commdand was entered by the user'''
     def __init__(self, command: str = '', *args: object) -> None:
         super().__init__(*args)
         self.command = command
 
-# exception raised when value wasn't found
 class ValueNotFound(Exception):
+    '''raised when value wasn't found'''
     def __init__(self, name: str, *args: object) -> None:
         super().__init__(*args)
         self.name = name
 
 
 class DuplicateEntry(Exception):
+    '''raised when same contact was added more than once'''
     def __init__(self, name: str, *args: object) -> None:
         super().__init__(*args)
         self.name = name
