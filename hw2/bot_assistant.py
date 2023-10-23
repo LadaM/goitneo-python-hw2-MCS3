@@ -1,11 +1,13 @@
 import json
 import os
-from constants import COMMANDS, CONTACTS_FILE
+
 from pathlib import Path
+from constants import COMMANDS, CONTACTS_FILE
+from exceptions import ValueNotFound, InvalidCommand, DuplicateEntry
 
 
 def main():
-    print("Welcome to the assitant bot!")
+    print("Welcome to the assistant bot!")
     while True:
         command = input("Enter a command: ").strip().lower()
         try:
@@ -46,25 +48,6 @@ def main():
                    .format('\n'.join(['- ' + s for s in COMMANDS.values()]))))
             continue
 
-class InvalidCommand(Exception):
-    '''raised when invalid commdand was entered by the user'''
-    def __init__(self, command: str = '', *args: object) -> None:
-        super().__init__(*args)
-        self.command = command
-
-class ValueNotFound(Exception):
-    '''raised when value wasn't found'''
-    def __init__(self, name: str, *args: object) -> None:
-        super().__init__(*args)
-        self.name = name
-
-
-class DuplicateEntry(Exception):
-    '''raised when same contact was added more than once'''
-    def __init__(self, name: str, *args: object) -> None:
-        super().__init__(*args)
-        self.name = name
-
 
 file_path = Path.cwd().joinpath(CONTACTS_FILE)
 
@@ -80,6 +63,7 @@ def input_error(func):
         except FileNotFoundError:
             # if the file is empty there are no contacts to show
             return "We haven't stored any contacts yet"
+
     return inner
 
 
