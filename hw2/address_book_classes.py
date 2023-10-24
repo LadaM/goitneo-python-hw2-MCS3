@@ -12,18 +12,16 @@ class Field:
 
 class Name(Field):
     def __init__(self, name: str) -> None:
-        self.name = name
         super().__init__(value=name)
 
 
 class Phone(Field):
     def __init__(self, phone: str) -> None:
-        self.phone = phone
         super().__init__(value=phone)
 
     @classmethod
     def validate(self, phone_number) -> bool:
-        return len(phone_number) == 1
+        return len(phone_number) == 10 and phone_number.isdigit()
 
 
 class Record:
@@ -101,7 +99,7 @@ if __name__ == "__main__":
     # Створення та додавання нового запису для Jane
     jane_record = Record("Jane")
     jane_record.add_phone("9876543210")
-    jane_record.delete_phone("98235") # -> Invalid phone number
+    jane_record.delete_phone("98235")  # -> Invalid phone number
     book.add_record(jane_record)
 
     # Виведення всіх записів у книзі
@@ -120,8 +118,8 @@ if __name__ == "__main__":
 
     # deleting the phone from record
     john.delete_phone(found_phone.value)
-    print(john) # phones: 1112223333
+    print(john)  # phones: 1112223333
 
     # Видалення запису Jane
     book.delete("Jane")
-    print(len(book)) # -> 1
+    print(len(book))  # -> 1
